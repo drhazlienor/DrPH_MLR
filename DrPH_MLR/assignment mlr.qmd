@@ -1,0 +1,194 @@
+---
+title: "Assignment_MLR"
+format: html
+editor: visual
+author: Group 1
+---
+
+## Workflow
+
+1.  prepare environnment
+2.  explore data
+3.  analyze data : estimate
+4.  inference
+5.  prediction
+6.  model checking
+
+## Prepare environment
+
+load library
+
+```{r}
+library(tidyverse)
+library(here)
+library(haven)
+library(broom)
+library(foreign)
+library(psych)
+library(gtsummary)
+library(ggpubr)
+library(GGally)
+library(rsq)
+library(car)
+
+```
+
+read data
+
+```{r}
+data0 <- read_dta(here('dataset','datamssm_a.dta'), .name_repair = 'unique')
+glimpse(data0)
+```
+
+transform to factor
+
+```{r}
+data0 <- data0 %>%
+  mutate(across(where(is.labelled), as_factor))
+summary(data0)
+```
+
+## Estimate-build model
+
+```{r}
+modldl.1 <- lm(hba1c ~  + smoking + age + hpt + weight +age:hpt, data = data0)
+summary(modldl.1)
+```
+
+Model checking
+
+```{r}
+plot(modldl.1)
+```
+
+add fbs
+
+```{r}
+modldl.1fbs <- lm(hba1c ~  + smoking + age + hpt + weight + +fbs + age:hpt, data = data0)
+summary(modldl.1fbs)
+```
+
+## inference
+
+```{r}
+tidy(modldl.1fbs, conf.int = TRUE)
+```
+
+## check model
+
+```{r}
+plot(modldl.1fbs)
+
+```
+
+## prediction
+
+```{r}
+resid <- augment(modldl.1fbs)
+resid
+```
+
+plot histo
+
+```{r}
+hist(resid$.resid, main="Histogram of Residuals", xlab="Residuals", col="lightblue", border="black")
+```
+
+plot residual vs fitted
+
+```{r}
+
+# Create a line chart of .resid against .fitted
+plot(resid$.fitted, resid$.resid, main="Residuals vs Fitted Values", xlab="Fitted Values", ylab="Residuals", col="blue", pch=16)
+abline(h=0, col="red", lty=2)  # Add a dashed line at y=0
+
+```
+
+plot residual vs fitted using ggplot
+
+```{r}
+# Assuming "resid" is your data frame
+# Assuming ".resid" contains the residuals and ".fitted" contains the fitted values
+
+# Load the ggplot2 library
+library(ggplot2)
+
+# Create a line chart of .resid against .fitted
+ggplot(resid, aes(x = .fitted, y = .resid)) +
+  geom_point(color = "blue", size = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuals vs Fitted Values", x = "Fitted Values", y = "Residuals")
+
+```
+
+outlier std residual
+
+```{r}
+outlier <- resid %>% filter(.std.resid < -3 | .std.resid > 3)
+outlier
+```
+
+outlier cook
+
+```{r}
+outliercook <- resid %>% filter(.cooksd >0.00097656)
+outliercook
+```
+
+remove outlier
+
+```{r}
+resid_removed <- resid %>% filter(.std.resid >= -3, .std.resid <= 3)
+```
+
+clean data
+
+```{r}
+# Assuming "resid_removed" is your data frame
+
+# Identify the column indices for the columns to be removed
+columns_to_remove <- (ncol(resid_removed) - 5):ncol(resid_removed)
+
+# Remove the last 6 columns
+resid_removed1 <- resid_removed[, -columns_to_remove, drop = FALSE]
+
+```
+
+## rerun model with no outlier
+
+```{r}
+modldl.1fbsre <- lm(hba1c ~  + smoking + age + hpt + weight + +fbs + age:hpt, data = resid_removed1)
+summary(modldl.1fbsre)
+```
+
+## inference
+
+```{r}
+tidy(modldl.1fbsre, conf.int = TRUE)
+```
+
+## prediction
+
+```{r}
+augment(modldl.1fbsre) %>% head()
+```
+
+## check model
+
+```{r}
+plot(modldl.1fbsre)
+```
+
+histogram residual
+
+```{r}
+resid_no_outlier <- augment(modldl.1fbsre)
+hist(resid_no_outlier$.resid, main="Histogram of Residuals", xlab="Residuals", col="lightblue", border="black")
+```
+
+plot fitted vs residual
+
+```{r}
+plot(resid_no_outlier$.fitted, resid_no_outlier$.resid, main="Residuals vs Fitted Values", xlab="Fitted Values", ylab="Residuals", col="blue", pch=16)
+abline(h=0, col="red", lty=2)  # Add a dashed line at y=0
+```

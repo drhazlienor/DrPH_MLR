@@ -1,0 +1,36 @@
+---
+title: "MLR DrPH"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+Load library
+
+```{r}
+library(tidyverse)
+library(here)
+library(haven)
+library(broom)
+library(foreign)
+library(psych)
+library(gtsummary)
+library(ggpubr)
+library(GGally)
+library(rsq)
+library(car)
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
